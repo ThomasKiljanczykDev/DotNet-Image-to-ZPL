@@ -42,7 +42,7 @@ Place your image file (e.g., `test.png`) in the same directory as the executable
 The output ZPL will be saved as `output.zpl` in the same directory.
 
 ## Command Line Arguments
-[.gitignore](.gitignore)
+
 The application supports the following command-line arguments:
 
 - `--input <file>`: Specifies the input image file to convert. Example:
