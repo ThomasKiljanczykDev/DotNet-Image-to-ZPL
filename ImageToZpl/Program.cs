@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace BitmapToZpl;
+namespace ImageToZpl;
 
 public static class Program
 {
@@ -14,7 +14,7 @@ public static class Program
             "input",
             Required = true,
             HelpText =
-                "Input file path. Supports formats from System.Drawing.Imaging.ImageFormat (https://learn.microsoft.com/en-us/dotnet/api/system.drawing.imaging.imageformat?view=windowsdesktop-9.0)."
+                "Input file path. Supports formats compatible with ImageSharp (https://docs.sixlabors.com/articles/imagesharp/imageformats.html)."
         )]
         public required string InputFilePath { get; init; }
 

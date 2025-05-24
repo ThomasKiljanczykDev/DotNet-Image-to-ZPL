@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitmapToZpl", "BitmapToZpl\BitmapToZpl.csproj", "{425AF1AE-98B5-4FAF-BC6C-F21138E39E30}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageToZpl", "ImageToZpl\ImageToZpl.csproj", "{425AF1AE-98B5-4FAF-BC6C-F21138E39E30}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

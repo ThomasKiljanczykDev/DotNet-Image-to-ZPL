@@ -1,9 +1,10 @@
-﻿using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
-namespace BitmapToZpl;
+namespace ImageToZpl;
 
 public static class BitmapToZplConverter
 {
@@ -20,18 +21,19 @@ public static class BitmapToZplConverter
             throw new FileNotFoundException("Input file not found.", filePath);
         }
 
-        using var bitmap = new Bitmap(filePath);
-        bitmap.Save("test.png", ImageFormat.Png);
-        return await ConvertToZplAsync(bitmap, useZ64);
+        using var image = await Image.LoadAsync(filePath);
+        using var grayscaleImage = image.CloneAs<L8>();
+
+        return await ConvertToZplAsync(grayscaleImage, useZ64);
     }
 
-    private static async Task<string> ConvertToZplAsync(Bitmap bitmap, bool useZ64)
+    private static async Task<string> ConvertToZplAsync(Image<L8> image, bool useZ64)
     {
-        // Convert the bitmap to a monochrome image
-        var monochromeBitmap = ToMonochrome(bitmap);
+        // Convert the image to a monochrome image
+        image.Mutate(ctx => ctx.BinaryThreshold(0.5f));
 
-        // Encode the monochrome bitmap to Z64 format
-        var z64Data = await EncodeAsync(monochromeBitmap, useZ64);
+        // Encode the monochrome image to Z64 format
+        var z64Data = await EncodeAsync(image, useZ64);
 
         var crcEncoder = new Crc16Ccitt();
         var crc = crcEncoder.ComputeChecksum(Encoding.ASCII.GetBytes(z64Data.Data));
@@ -44,7 +46,7 @@ public static class BitmapToZplConverter
         zplCommand.AppendLine("^XA");
 
         // Set field origin
-        zplCommand.AppendLine($"^FO{0},{0}");
+        zplCommand.AppendLine("^FO0,0");
         zplCommand.AppendLine(
             $"^GFA,{z64Data.TotalBytes},{z64Data.TotalBytes},{z64Data.BytesPerRow},:{encoding}:{z64Data.Data}:{crc:X}"
         );
@@ -55,34 +57,17 @@ public static class BitmapToZplConverter
         return zplCommand.ToString();
     }
 
-
     /// <summary>
     /// Based on guidelines from
     /// <see href="https://stackoverflow.com/questions/59319970/zpl-binary-b64-and-compressed-z64-encoding" />
     /// </summary>
-    private static async Task<Z64EncodingResult> EncodeAsync(Bitmap bitmap, bool useZ64)
+    private static async Task<Z64EncodingResult> EncodeAsync(Image<L8> image, bool useZ64)
     {
-        var bmpData = bitmap.LockBits(
-            new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-            ImageLockMode.ReadOnly,
-            PixelFormat.Format1bppIndexed
-        );
+        var bytesPerRow = (image.Width + 7) / 8; // Each row is padded to the nearest byte
+        var totalBytes = bytesPerRow * image.Height;
 
-        var bytesPerRow = bmpData.Stride;
-        var totalBytes = bytesPerRow * bitmap.Height;
-        var rawData = new byte[totalBytes];
+        var outputData = Get1BppBytes(image, bytesPerRow, totalBytes);
 
-        System.Runtime.InteropServices.Marshal.Copy(bmpData.Scan0, rawData, 0, totalBytes);
-        bitmap.UnlockBits(bmpData);
-
-        // Invert the colors (0 becomes 1 and 1 becomes 0)
-        // Monochrome conversion in this project results in inverted colors that need to be flipped back
-        for (var i = 0; i < rawData.Length; i++)
-        {
-            rawData[i] = (byte)~rawData[i];
-        }
-
-        var outputData = rawData;
         if (useZ64)
         {
             outputData = await CompressDataAsync(outputData);
@@ -91,6 +76,33 @@ public static class BitmapToZplConverter
         var encodedOutputData = Convert.ToBase64String(outputData);
 
         return new Z64EncodingResult(totalBytes, bytesPerRow, encodedOutputData);
+    }
+
+    private static byte[] Get1BppBytes(Image<L8> image, int bytesPerRow, int totalBytes)
+    {
+        var outputData = new byte[totalBytes];
+
+        var pixelData = new byte[image.Width * image.Height];
+        image.CopyPixelDataTo(pixelData);
+
+        for (var y = 0; y < image.Height; y++)
+        {
+            for (var x = 0; x < image.Width; x++)
+            {
+                var byteIndex = y * bytesPerRow + x / 8;
+
+                // Pack bits from MSB to LSB
+                var bitIndex = 7 - x % 8;
+
+                // Threshold for black
+                if (pixelData[y * image.Width + x] < 128)
+                {
+                    outputData[byteIndex] |= (byte)(1 << bitIndex);
+                }
+            }
+        }
+
+        return outputData;
     }
 
     private static async Task<byte[]> CompressDataAsync(byte[] data)
@@ -102,10 +114,5 @@ public static class BitmapToZplConverter
         }
 
         return memoryStream.ToArray();
-    }
-
-    private static Bitmap ToMonochrome(Bitmap original)
-    {
-        return original.Clone(new Rectangle(0, 0, original.Width, original.Height), PixelFormat.Format1bppIndexed);
     }
 }

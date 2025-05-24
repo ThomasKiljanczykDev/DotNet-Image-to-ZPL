@@ -1,4 +1,4 @@
-# DotNet Bitmap to ZPL Converter
+# DotNet Image to ZPL Converter
 
 This is a simple .NET console application that converts bitmap images
 (from e.g., JPG, PNG) into ZPL (Zebra Programming Language) format.
@@ -6,14 +6,13 @@ It includes an option for Z64 encoding.
 
 ## Features
 
-- Converts PNG, JPG, and other fromats supported by System.Drawing.Bitmap to ZPL.
+- Converts PNG, JPG, and other image formats to ZPL.
 - Supports Z64 encoding for compressed ZPL output.
 - Easy-to-use console interface.
 
 ## Prerequisites
 
 - .NET 8.0 SDK or later (not tested with earlier versions).
-- Windows operating system (for GDI+ support).
 
 ## Getting Started
 

@@ -1,4 +1,4 @@
-﻿namespace BitmapToZpl;
+﻿namespace ImageToZpl;
 
 /// <summary>
 /// Based on <see href="http://sanity-free.com/133/crc_16_ccitt_in_csharp.html" />.
