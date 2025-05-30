@@ -8,6 +8,7 @@ It includes an option for Z64 encoding.
 
 - Converts PNG, JPG, and other image formats to ZPL.
 - Supports Z64 encoding for compressed ZPL output.
+- Resizes images to specified dimensions.
 - Easy-to-use console interface.
 
 ## Prerequisites
@@ -55,6 +56,14 @@ The application supports the following command-line arguments:
 - `--z64`: Enables Z64 encoding for the output ZPL. Example:
   ```bash
   dotnet run --project BitmapToZpl -- --input test.png --z64
+  ```
+- `--width <pixels>`: Resize the image to this width (in pixels). Optional. Example:
+  ```bash
+  dotnet run --project BitmapToZpl -- --input test.png --width 300
+  ```
+- `--height <pixels>`: Resize the image to this height (in pixels). Optional. Example:
+  ```bash
+  dotnet run --project BitmapToZpl -- --input test.png --height 200
   ```
 - `--help`: Displays help information about the command-line options. Example:
   ```bash
