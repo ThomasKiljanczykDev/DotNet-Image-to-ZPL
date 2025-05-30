@@ -20,6 +20,12 @@ public static class Program
 
         [Option('o', "output", Required = false, HelpText = "Output file path.", Default = "output.zpl")]
         public string OutputFilePath { get; init; } = "output.zpl";
+
+        [Option('w', "width", Required = false, HelpText = "Resize image to this width (pixels).", Default = null)]
+        public int? Width { get; init; }
+
+        [Option('h', "height", Required = false, HelpText = "Resize image to this height (pixels).", Default = null)]
+        public int? Height { get; init; }
     }
 
     public static async Task Main(string[] args)
@@ -34,7 +40,15 @@ public static class Program
         try
         {
             var options = parseResult.Value;
-            var resultZpl = await BitmapToZplConverter.ConvertToZplAsync(options.InputFilePath, options.UseZ64);
+            var resultZpl = await BitmapToZplConverter.ConvertToZplAsync(
+                options.InputFilePath,
+                new BitmapToZplConverter.ConvertToZplArguments
+                {
+                    UseZ64 = options.UseZ64,
+                    Width = options.Width,
+                    Height = options.Height
+                }
+            );
 
             await File.WriteAllTextAsync(options.OutputFilePath, resultZpl);
         }

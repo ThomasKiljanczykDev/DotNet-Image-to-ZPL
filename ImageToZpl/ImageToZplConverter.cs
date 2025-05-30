@@ -8,13 +8,20 @@ namespace ImageToZpl;
 
 public static class BitmapToZplConverter
 {
+    public class ConvertToZplArguments
+    {
+        public bool UseZ64 { get; init; } = true;
+        public int? Width { get; init; }
+        public int? Height { get; init; }
+    }
+
     private record Z64EncodingResult(
         int TotalBytes,
         int BytesPerRow,
         string Data
     );
 
-    public static async Task<string> ConvertToZplAsync(string filePath, bool useZ64)
+    public static async Task<string> ConvertToZplAsync(string filePath, ConvertToZplArguments args)
     {
         if (!File.Exists(filePath))
         {
@@ -24,20 +31,40 @@ public static class BitmapToZplConverter
         using var image = await Image.LoadAsync(filePath);
         using var grayscaleImage = image.CloneAs<L8>();
 
-        return await ConvertToZplAsync(grayscaleImage, useZ64);
+        return await ConvertToZplAsync(grayscaleImage, args);
     }
 
-    private static async Task<string> ConvertToZplAsync(Image<L8> image, bool useZ64)
+    private static async Task<string> ConvertToZplAsync(Image<L8> image, ConvertToZplArguments args)
     {
         // Convert the image to a monochrome image
         image.Mutate(ctx => ctx.BinaryThreshold(0.5f));
 
+        if (args.Width.HasValue || args.Height.HasValue)
+        {
+            var width = args.Width;
+            var height = args.Height;
+
+            if (!width.HasValue && height.HasValue)
+            {
+                var scaleFactor = height.Value / (double)image.Height;
+                width = (int)Math.Floor(image.Width * scaleFactor);
+            }
+            else if (!height.HasValue && width.HasValue)
+            {
+                var scaleFactor = width.Value / (double)image.Width;
+                height = (int)Math.Floor(image.Height * scaleFactor);
+            }
+
+            // Resize the image if width or height is specified
+            image.Mutate(ctx => ctx.Resize(width!.Value, height!.Value));
+        }
+
         // Encode the monochrome image to Z64 format
-        var z64Data = await EncodeAsync(image, useZ64);
+        var z64Data = await EncodeAsync(image, args.UseZ64);
 
         var crcEncoder = new Crc16Ccitt();
         var crc = crcEncoder.ComputeChecksum(Encoding.ASCII.GetBytes(z64Data.Data));
-        var encoding = useZ64 ? "Z64" : "B64";
+        var encoding = args.UseZ64 ? "Z64" : "B64";
 
         // Construct the ZPL command
         var zplCommand = new StringBuilder();
