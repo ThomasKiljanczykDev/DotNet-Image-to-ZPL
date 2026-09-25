@@ -1,8 +1,6 @@
 ﻿using System.IO.Compression;
 using System.Text;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace ImageToZpl;
 
@@ -15,11 +13,7 @@ public static class BitmapToZplConverter
         public int? Height { get; init; }
     }
 
-    private record Z64EncodingResult(
-        int TotalBytes,
-        int BytesPerRow,
-        string Data
-    );
+    private record Z64EncodingResult(int TotalBytes, int BytesPerRow, string Data);
 
     public static async Task<string> ConvertToZplAsync(string filePath, ConvertToZplArguments args)
     {
@@ -28,36 +22,27 @@ public static class BitmapToZplConverter
             throw new FileNotFoundException("Input file not found.", filePath);
         }
 
-        using var image = await Image.LoadAsync(filePath);
-        using var grayscaleImage = image.CloneAs<L8>();
+        var fileData = await File.ReadAllBytesAsync(filePath);
+        using var image =
+            SKBitmap.Decode(fileData)
+            ?? throw new InvalidDataException($"Unsupported or corrupt image file: {filePath}");
+        using var grayscaleImage =
+            image.Copy(SKColorType.Gray8)
+            ?? throw new InvalidOperationException("Failed to convert image to grayscale.");
 
         return await ConvertToZplAsync(grayscaleImage, args);
     }
 
-    private static async Task<string> ConvertToZplAsync(Image<L8> image, ConvertToZplArguments args)
+    private static async Task<string> ConvertToZplAsync(
+        SKBitmap grayscaleImage,
+        ConvertToZplArguments args
+    )
     {
         // Convert the image to a monochrome image
-        image.Mutate(ctx => ctx.BinaryThreshold(0.5f));
+        ApplyBinaryThreshold(grayscaleImage);
 
-        if (args.Width.HasValue || args.Height.HasValue)
-        {
-            var width = args.Width;
-            var height = args.Height;
-
-            if (!width.HasValue && height.HasValue)
-            {
-                var scaleFactor = height.Value / (double)image.Height;
-                width = (int)Math.Floor(image.Width * scaleFactor);
-            }
-            else if (!height.HasValue && width.HasValue)
-            {
-                var scaleFactor = width.Value / (double)image.Width;
-                height = (int)Math.Floor(image.Height * scaleFactor);
-            }
-
-            // Resize the image if width or height is specified
-            image.Mutate(ctx => ctx.Resize(width!.Value, height!.Value));
-        }
+        using var resizedImage = Resize(grayscaleImage, args);
+        var image = resizedImage ?? grayscaleImage;
 
         // Encode the monochrome image to Z64 format
         var z64Data = await EncodeAsync(image, args.UseZ64);
@@ -84,11 +69,51 @@ public static class BitmapToZplConverter
         return zplCommand.ToString();
     }
 
+    private static void ApplyBinaryThreshold(SKBitmap image)
+    {
+        var pixels = image.GetPixelSpan();
+        for (var i = 0; i < pixels.Length; i++)
+        {
+            pixels[i] = pixels[i] < 128 ? byte.MinValue : byte.MaxValue;
+        }
+    }
+
+    private static SKBitmap? Resize(SKBitmap image, ConvertToZplArguments args)
+    {
+        if (!args.Width.HasValue && !args.Height.HasValue)
+        {
+            return null;
+        }
+
+        var width = args.Width;
+        var height = args.Height;
+
+        if (!width.HasValue && height.HasValue)
+        {
+            var scaleFactor = height.Value / (double)image.Height;
+            width = (int)Math.Floor(image.Width * scaleFactor);
+        }
+        else if (!height.HasValue && width.HasValue)
+        {
+            var scaleFactor = width.Value / (double)image.Width;
+            height = (int)Math.Floor(image.Height * scaleFactor);
+        }
+
+        var resizedInfo = new SKImageInfo(
+            width!.Value,
+            height!.Value,
+            SKColorType.Gray8,
+            SKAlphaType.Opaque
+        );
+        return image.Resize(resizedInfo, new SKSamplingOptions(SKCubicResampler.CatmullRom))
+            ?? throw new InvalidOperationException("Failed to resize image.");
+    }
+
     /// <summary>
     /// Based on guidelines from
     /// <see href="https://stackoverflow.com/questions/59319970/zpl-binary-b64-and-compressed-z64-encoding" />
     /// </summary>
-    private static async Task<Z64EncodingResult> EncodeAsync(Image<L8> image, bool useZ64)
+    private static async Task<Z64EncodingResult> EncodeAsync(SKBitmap image, bool useZ64)
     {
         var bytesPerRow = (image.Width + 7) / 8; // Each row is padded to the nearest byte
         var totalBytes = bytesPerRow * image.Height;
@@ -105,12 +130,12 @@ public static class BitmapToZplConverter
         return new Z64EncodingResult(totalBytes, bytesPerRow, encodedOutputData);
     }
 
-    private static byte[] Get1BppBytes(Image<L8> image, int bytesPerRow, int totalBytes)
+    private static byte[] Get1BppBytes(SKBitmap image, int bytesPerRow, int totalBytes)
     {
         var outputData = new byte[totalBytes];
 
-        var pixelData = new byte[image.Width * image.Height];
-        image.CopyPixelDataTo(pixelData);
+        var pixelData = image.GetPixelSpan();
+        var sourceRowBytes = image.RowBytes;
 
         for (var y = 0; y < image.Height; y++)
         {
@@ -122,7 +147,7 @@ public static class BitmapToZplConverter
                 var bitIndex = 7 - x % 8;
 
                 // Threshold for black
-                if (pixelData[y * image.Width + x] < 128)
+                if (pixelData[y * sourceRowBytes + x] < 128)
                 {
                     outputData[byteIndex] |= (byte)(1 << bitIndex);
                 }

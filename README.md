@@ -13,7 +13,10 @@ It includes an option for Z64 encoding.
 
 ## Prerequisites
 
-- .NET 8.0 SDK or later (not tested with earlier versions).
+- .NET 10.0 SDK or later.
+- Runs on Windows, macOS, and Linux (glibc and musl/Alpine, x64 and ARM64).
+  Image processing uses [SkiaSharp](https://github.com/mono/SkiaSharp); its native Linux
+  binaries are bundled with no extra system packages required.
 
 ## Getting Started
 
