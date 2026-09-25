@@ -20,8 +20,8 @@ It includes an option for Z64 encoding.
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/ThomasKiljanczykDev/DotNet-Bitmap-to-ZPL
-cd DotNet-Bitmap-to-ZPL
+git clone https://github.com/ThomasKiljanczykDev/DotNet-Image-to-ZPL
+cd DotNet-Image-to-ZPL
 ```
 
 ### Build the Project
@@ -33,7 +33,7 @@ dotnet build
 ### Run the Application
 
 ```bash
-dotnet run --project BitmapToZpl
+dotnet run --project ImageToZpl
 ```
 
 ### Example Usage
@@ -47,35 +47,35 @@ The application supports the following command-line arguments:
 
 - `--input <file>`: Specifies the input image file to convert. Example:
   ```bash
-  dotnet run --project BitmapToZpl -- --input test.png
+  dotnet run --project ImageToZpl -- --input test.png
   ```
 - `--output <file>`: Specifies the output ZPL file. If not provided, the default is `output.zpl`. Example:
   ```bash
-  dotnet run --project BitmapToZpl -- --input test.png --output custom_output.zpl
+  dotnet run --project ImageToZpl -- --input test.png --output custom_output.zpl
   ```
 - `--z64`: Enables Z64 encoding for the output ZPL. Example:
   ```bash
-  dotnet run --project BitmapToZpl -- --input test.png --z64
+  dotnet run --project ImageToZpl -- --input test.png --z64
   ```
 - `--width <pixels>`: Resize the image to this width (in pixels). Optional. Example:
   ```bash
-  dotnet run --project BitmapToZpl -- --input test.png --width 300
+  dotnet run --project ImageToZpl -- --input test.png --width 300
   ```
 - `--height <pixels>`: Resize the image to this height (in pixels). Optional. Example:
   ```bash
-  dotnet run --project BitmapToZpl -- --input test.png --height 200
+  dotnet run --project ImageToZpl -- --input test.png --height 200
   ```
 - `--help`: Displays help information about the command-line options. Example:
   ```bash
-  dotnet run --project BitmapToZpl -- --help
+  dotnet run --project ImageToZpl -- --help
   ```
 
 You can combine these arguments to customize the behavior of the application.
 
 ## Project Structure
 
-- **BitmapToZpl/**: Contains the main application code.
-    - `BitmapToZplConverter.cs`: Core logic for converting images to ZPL.
+- **ImageToZpl/**: Contains the main application code.
+    - `ImageToZplConverter.cs`: Core logic for converting images to ZPL.
     - `Crc16Ccitt.cs`: Utility for CRC16 checksum calculation.
     - `Program.cs`: Entry point of the application.
 - **bin/**: Compiled binaries.
