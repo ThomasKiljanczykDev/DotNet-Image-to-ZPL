@@ -1,95 +1,46 @@
 # DotNet Image to ZPL Converter
 
-This is a simple .NET console application that converts bitmap images
-(from e.g., JPG, PNG) into ZPL (Zebra Programming Language) format.
-It includes an option for Z64 encoding.
+.NET console app that converts images to ZPL (Zebra Programming Language) as a `^GFA` graphic field with Z64 (zlib-compressed) encoding.
 
-## Features
+- Input: PNG, JPEG, GIF, BMP, WebP, ICO, WBMP.
+- Output: black and white, 50% luminance threshold.
+- Optional resize; aspect ratio preserved when only width or height is given.
 
-- Converts PNG, JPG, and other image formats to ZPL.
-- Supports Z64 encoding for compressed ZPL output.
-- Resizes images to specified dimensions.
-- Easy-to-use console interface.
+## Requirements
 
-## Prerequisites
+- .NET 10 SDK.
+- Windows, macOS, or Linux (glibc or musl, x64 or ARM64). SkiaSharp native binaries are bundled; no system packages needed.
 
-- .NET 8.0 SDK or later (not tested with earlier versions).
-
-## Getting Started
-
-### Clone the Repository
+## Usage
 
 ```bash
 git clone https://github.com/ThomasKiljanczykDev/DotNet-Image-to-ZPL
 cd DotNet-Image-to-ZPL
+dotnet run --project ImageToZpl -- --input test.png --width 300
 ```
 
-### Build the Project
+Relative paths resolve against the current working directory.
 
-```bash
-dotnet build
-```
+## Options
 
-### Run the Application
-
-```bash
-dotnet run --project ImageToZpl
-```
-
-### Example Usage
-
-Place your image file (e.g., `test.png`) in the same directory as the executable and run the application.
-The output ZPL will be saved as `output.zpl` in the same directory.
-
-## Command Line Arguments
-
-The application supports the following command-line arguments:
-
-- `--input <file>`: Specifies the input image file to convert. Example:
-  ```bash
-  dotnet run --project ImageToZpl -- --input test.png
-  ```
-- `--output <file>`: Specifies the output ZPL file. If not provided, the default is `output.zpl`. Example:
-  ```bash
-  dotnet run --project ImageToZpl -- --input test.png --output custom_output.zpl
-  ```
-- `--z64`: Enables Z64 encoding for the output ZPL. Example:
-  ```bash
-  dotnet run --project ImageToZpl -- --input test.png --z64
-  ```
-- `--width <pixels>`: Resize the image to this width (in pixels). Optional. Example:
-  ```bash
-  dotnet run --project ImageToZpl -- --input test.png --width 300
-  ```
-- `--height <pixels>`: Resize the image to this height (in pixels). Optional. Example:
-  ```bash
-  dotnet run --project ImageToZpl -- --input test.png --height 200
-  ```
-- `--help`: Displays help information about the command-line options. Example:
-  ```bash
-  dotnet run --project ImageToZpl -- --help
-  ```
-
-You can combine these arguments to customize the behavior of the application.
+| Option | Default | Description |
+|---|---|---|
+| `-i`, `--input <file>` | required | Input image. |
+| `-o`, `--output <file>` | `output.zpl` | Output ZPL file. |
+| `-w`, `--width <px>` | | Target width. |
+| `-h`, `--height <px>` | | Target height. |
+| `-z`, `--z64` | on | Z64 encoding. Cannot currently be disabled. |
+| `--help` | | Show help. |
 
 ## Project Structure
 
-- **ImageToZpl/**: Contains the main application code.
-    - `ImageToZplConverter.cs`: Core logic for converting images to ZPL.
-    - `Crc16Ccitt.cs`: Utility for CRC16 checksum calculation.
-    - `Program.cs`: Entry point of the application.
-- **bin/**: Compiled binaries.
-- **obj/**: Build artifacts.
+- `ImageToZpl/ImageToZplConverter.cs`: image to ZPL conversion.
+- `ImageToZpl/Crc16Ccitt.cs`: CRC16 checksum.
+- `ImageToZpl/Program.cs`: entry point, argument parsing.
+- `global.json`: pins .NET SDK 10.0 (rolls forward to latest minor).
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+MIT. See `LICENSE`.
 
-## Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request.
-
-## Contact
-
-For any questions or issues, please open an issue in the repository.
-
+Issues and pull requests welcome.

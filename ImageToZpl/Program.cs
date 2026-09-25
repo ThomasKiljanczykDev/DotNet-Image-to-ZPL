@@ -14,7 +14,7 @@ public static class Program
             "input",
             Required = true,
             HelpText =
-                "Input file path. Supports formats compatible with ImageSharp (https://docs.sixlabors.com/articles/imagesharp/imageformats.html)."
+                "Input file path. Supports formats decodable by SkiaSharp (PNG, JPEG, GIF, BMP, WebP, ICO, WBMP)."
         )]
         public required string InputFilePath { get; init; }
 
